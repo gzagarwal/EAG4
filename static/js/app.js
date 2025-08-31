@@ -78,7 +78,7 @@ async function uploadImage() {
 
 async function addLayer() {
   const type = document.getElementById('layerType').value;
-  const kernel = parseInt(document.getElementById('kernel').value, 10);
+  const kernel = parseInt(document.getElementById('kernelSize').value, 10);
   const stride = parseInt(document.getElementById('stride').value, 10);
   const padding = parseInt(document.getElementById('padding').value, 10);
   const dilation = parseInt(document.getElementById('dilation').value, 10);
@@ -175,12 +175,123 @@ function updateDisplay(data) {
   `).join('');
 }
 
+// Chat functionality
+let isTyping = false;
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendChatBtn');
+  const message = input.value.trim();
+  
+  if (!message || isTyping) return;
+  
+  // Add user message to chat
+  addMessageToChat(message, 'user');
+  input.value = '';
+  
+  // Show typing indicator and disable input
+  showTypingIndicator();
+  isTyping = true;
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending...';
+  
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: message })
+    });
+    
+    // Remove typing indicator
+    removeTypingIndicator();
+    
+    if (response.ok) {
+      const result = await response.json();
+      
+      if (result.success) {
+        addMessageToChat(result.response, 'bot');
+      } else {
+        addMessageToChat(result.error, 'bot', true);
+      }
+    } else {
+      const errorResult = await response.json();
+      addMessageToChat(errorResult.error || 'Sorry, I encountered an error. Please try again.', 'bot', true);
+    }
+  } catch (error) {
+    console.error('Chat error:', error);
+    removeTypingIndicator();
+    addMessageToChat('Sorry, I encountered an error. Please try again.', 'bot', true);
+  }
+  
+  // Re-enable input
+  isTyping = false;
+  sendBtn.disabled = false;
+  sendBtn.textContent = 'Send';
+}
+
+function addMessageToChat(content, sender, isError = false) {
+  const chatMessages = document.getElementById('chatMessages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${sender}-message ${isError ? 'error-message' : ''}`;
+  
+  const messageContent = document.createElement('div');
+  messageContent.className = 'message-content';
+  
+  if (sender === 'bot') {
+    messageContent.innerHTML = `<strong>AI Assistant:</strong> ${content}`;
+  } else {
+    messageContent.textContent = content;
+  }
+  
+  messageDiv.appendChild(messageContent);
+  chatMessages.appendChild(messageDiv);
+  
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTypingIndicator() {
+  const chatMessages = document.getElementById('chatMessages');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message bot-message';
+  typingDiv.id = 'typingIndicator';
+  
+  typingDiv.innerHTML = `
+    <div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+  
+  chatMessages.appendChild(typingDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const typingIndicator = document.getElementById('typingIndicator');
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('addBtn').addEventListener('click', addLayer);
   document.getElementById('resetBtn').addEventListener('click', resetLayers);
   document.getElementById('setDimensionsBtn').addEventListener('click', setInputDimensions);
   document.getElementById('uploadBtn').addEventListener('click', uploadImage);
+  
+  // Chat event listeners
+  document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
+  document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
 
   // Initialize display
   updateDisplay({

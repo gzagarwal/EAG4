@@ -62,7 +62,7 @@
             <input id="stride" type="number" value="1" min="1" />
           </div>
           <div class="input-group">
-            <label>Padding (per side)</label>
+            <label>Padding</label>
             <input id="padding" type="number" value="0" min="0" />
           </div>
           <div class="input-group">
@@ -78,20 +78,20 @@
 
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-value" id="currentRf">1</div>
-          <div class="stat-label">Current RF</div>
+          <h3>Current RF</h3>
+          <p id="currentRf">1</p>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="currentJump">1</div>
-          <div class="stat-label">Current Jump</div>
+          <h3>Jump</h3>
+          <p id="currentJump">1</p>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="currentStart">0.5</div>
-          <div class="stat-label">Current Start</div>
+          <h3>Start</h3>
+          <p id="currentStart">0.5</p>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="layerCount">0</div>
-          <div class="stat-label">Total Layers</div>
+          <h3>Layers</h3>
+          <p id="layerCount">0</p>
         </div>
       </div>
 
@@ -127,6 +127,27 @@
           </div>
           <div class="dimension-item">
             <strong>Final Dimensions:</strong> <span id="finalDimensions">224×224×3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Chat Section -->
+      <div class="chat-section">
+        <h3>🤖 AI Assistant</h3>
+        <p class="chat-subtitle">Ask me anything about neural networks, receptive fields, or any other topic!</p>
+        
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+              <div class="message-content">
+                <strong>AI Assistant:</strong> Hello! I'm here to help you with neural network concepts, receptive field calculations, or any other questions you might have. Feel free to ask me anything!
+              </div>
+            </div>
+          </div>
+          
+          <div class="chat-input-container">
+            <input type="text" id="chatInput" placeholder="Ask me anything..." />
+            <button id="sendChatBtn">Send</button>
           </div>
         </div>
       </div>

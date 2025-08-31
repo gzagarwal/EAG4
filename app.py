@@ -5,6 +5,8 @@ import os
 from werkzeug.utils import secure_filename
 import cv2
 import numpy as np
+import google.generativeai as genai
+# from config import GEMINI_API_KEY  # Import from config file
 
 
 class Layer:
@@ -197,6 +199,122 @@ class ReceptiveFieldCalculator:
         return self.compute_current_state()["layers"]
 
 
+class GeminiChatbot:
+    """Gemini AI chatbot for answering questions"""
+
+    def __init__(self, api_key: str = None):
+        self.api_key = "AIzaSyDeBDiXgPfSO0BtI9U1zlu9-FJc_GqJOTY"
+
+        if self.api_key:
+            try:
+                print(f"Configuring Gemini with API key: {self.api_key[:10]}...")
+                genai.configure(api_key=self.api_key)
+
+                # Debug: List available models
+                try:
+                    print("Attempting to list available models...")
+                    models = genai.list_models()
+                    print("Available models:")
+                    for model in models:
+                        print(f"  - {model.name}")
+                except Exception as e:
+                    print(f"Could not list models: {e}")
+                    print(f"Error type: {type(e)}")
+                    print(f"Error details: {str(e)}")
+
+                # Try the simplest models first - these usually have better free tier quotas
+                try:
+                    print("Trying gemini-1.0-pro (simplest model)...")
+                    self.model = genai.GenerativeModel("gemini-2.0-flash")
+                    print("Successfully initialized gemini-1.0-pro")
+                except Exception as e:
+                    print(f"Failed to initialize gemini-1.0-pro: {e}")
+                    try:
+                        print("Trying gemini-pro (fallback)...")
+                        self.model = genai.GenerativeModel("gemini-pro")
+                        print("Successfully initialized gemini-pro")
+                    except Exception as e:
+                        print(f"Failed to initialize gemini-pro: {e}")
+                        try:
+                            print("Trying gemini-1.5-pro (last resort)...")
+                            self.model = genai.GenerativeModel("gemini-1.5-pro")
+                            print("Successfully initialized gemini-1.5-pro")
+                        except Exception as e:
+                            print(f"Failed to initialize gemini-1.5-pro: {e}")
+                            self.model = None
+
+            except Exception as e:
+                print(f"Error initializing Gemini: {e}")
+                self.model = None
+        else:
+            self.model = None
+
+    def chat(self, message: str) -> Dict[str, Any]:
+        """Send a message to Gemini and get response"""
+        if not self.model:
+            return {
+                "error": "Gemini API key not configured or model initialization failed. Please check your API key and try again.",
+                "success": False,
+            }
+
+        try:
+            # Simplified context for the simplest model
+            context = """
+            You are a helpful AI assistant. You can answer questions about:
+            - Neural networks and CNNs
+            - Receptive field calculations
+            - General AI/ML concepts
+            - Any other questions users might have
+            
+            Keep responses clear and concise.
+            """
+
+            full_prompt = f"{context}\n\nUser question: {message}"
+
+            # Simple generate_content call without complex safety settings
+            response = self.model.generate_content(full_prompt)
+
+            return {"response": response.text, "success": True}
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"Gemini API error: {error_msg}")
+
+            # Handle quota errors more gracefully
+            if "quota" in error_msg.lower() or "429" in error_msg:
+                return {
+                    "error": "Free tier quota reached. Please wait 1-2 minutes and try again. The free tier allows 15 requests per day.",
+                    "success": False,
+                }
+            elif "404" in error_msg and "models" in error_msg:
+                return {
+                    "error": "Model not found. Please check your API key.",
+                    "success": False,
+                }
+            elif "403" in error_msg:
+                return {
+                    "error": "Access denied. Please check your API key permissions.",
+                    "success": False,
+                }
+            else:
+                return {
+                    "error": f"API error: {error_msg}",
+                    "success": False,
+                }
+
+    def test_api_key(self) -> Dict[str, Any]:
+        """Test if the API key is working"""
+        if not self.model:
+            return {"error": "Model not initialized", "success": False}
+
+        try:
+            # Very simple test prompt
+            response = self.model.generate_content("Say 'Hello'")
+            return {"response": response.text, "success": True}
+        except Exception as e:
+            return {"error": str(e), "success": False}
+
+
 class FlaskApp:
     """Main Flask application class"""
 
@@ -205,6 +323,10 @@ class FlaskApp:
         self.app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
         self.app.config["UPLOAD_FOLDER"] = "uploads"
         self.calculator = ReceptiveFieldCalculator()
+
+        # Option 3: Pass API key when creating the chatbot
+        self.chatbot = GeminiChatbot()  # Will use the key from config
+
         self.setup_routes()
 
         # Create uploads directory if it doesn't exist
@@ -320,6 +442,31 @@ class FlaskApp:
         def current_state():
             """Get current calculator state"""
             return jsonify(self.calculator.compute_current_state())
+
+        @self.app.route("/api/chat", methods=["POST"])
+        def chat():
+            """Chat with Gemini AI"""
+            try:
+                data = request.get_json()
+                message = data.get("message", "").strip()
+
+                if not message:
+                    return jsonify({"error": "Message cannot be empty"}), 400
+
+                response = self.chatbot.chat(message)
+                return jsonify(response)
+
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
+
+        @self.app.route("/api/test_gemini", methods=["GET"])
+        def test_gemini():
+            """Test Gemini API connection"""
+            try:
+                result = self.chatbot.test_api_key()
+                return jsonify(result)
+            except Exception as e:
+                return jsonify({"error": str(e)}), 400
 
     def run(self, host="0.0.0.0", port=5000, debug=True):
         """Run the Flask application"""
