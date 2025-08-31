@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Advanced Receptive Field Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Advanced Receptive Field Calculator</h1>
+      <p class="subtitle">Add layers and see how they affect the receptive field, output size, and network properties</p>
+
+      <div class="controls-section">
+        <h3>Input Image Settings</h3>
+        <div class="row">
+          <div class="input-group">
+            <label>Height</label>
+            <input id="inputHeight" type="number" value="224" min="1" />
+          </div>
+          <div class="input-group">
+            <label>Width</label>
+            <input id="inputWidth" type="number" value="224" min="1" />
+          </div>
+          <div class="input-group">
+            <label>Channels</label>
+            <input id="inputChannels" type="number" value="3" min="1" max="4" />
+          </div>
+          <div class="input-group">
+            <button id="setDimensionsBtn">Set Dimensions</button>
+          </div>
+        </div>
+        
+        <div class="upload-section">
+          <h4>Or Upload Image</h4>
+          <div class="row">
+            <div class="input-group">
+              <input type="file" id="imageUpload" accept="image/*" />
+            </div>
+            <div class="input-group">
+              <button id="uploadBtn">Upload & Analyze</button>
+            </div>
+          </div>
+        </div>
+        
+        <h3>Add Layer</h3>
+        <div class="row">
+          <div class="input-group">
+            <label>Layer Type</label>
+            <select id="layerType">
+              <option value="conv">Conv2D</option>
+              <option value="maxpool">MaxPool2D</option>
+              <option value="avgpool">AvgPool2D</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Kernel Size</label>
+            <input id="kernel" type="number" value="3" min="1" />
+          </div>
+          <div class="input-group">
+            <label>Stride</label>
+            <input id="stride" type="number" value="1" min="1" />
+          </div>
+          <div class="input-group">
+            <label>Padding (per side)</label>
+            <input id="padding" type="number" value="0" min="0" />
+          </div>
+          <div class="input-group">
+            <label>Dilation</label>
+            <input id="dilation" type="number" value="1" min="1" />
+          </div>
+          <div class="input-group">
+            <button id="addBtn">Add Layer</button>
+            <button id="resetBtn">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="currentRf">1</div>
+          <div class="stat-label">Current RF</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="currentJump">1</div>
+          <div class="stat-label">Current Jump</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="currentStart">0.5</div>
+          <div class="stat-label">Current Start</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="layerCount">0</div>
+          <div class="stat-label">Total Layers</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>k</th>
+              <th>s</th>
+              <th>p</th>
+              <th>d</th>
+              <th>k_eff</th>
+              <th>Receptive Field</th>
+              <th>Jump</th>
+              <th>Start</th>
+              <th>Input (H×W×C)</th>
+              <th>Output (H×W×C)</th>
+            </tr>
+          </thead>
+          <tbody id="layersTable"></tbody>
+        </table>
+      </div>
+      
+      <div class="rf-display">
+        <strong>Current Receptive Field:</strong> <span id="rfOut" class="pill">1</span>
+        <span class="muted">(1D; same applies per spatial dimension)</span>
+        <br><br>
+        <div class="dimensions-info">
+          <div class="dimension-item">
+            <strong>Input Dimensions:</strong> <span id="inputDimensions">224×224×3</span>
+          </div>
+          <div class="dimension-item">
+            <strong>Final Dimensions:</strong> <span id="finalDimensions">224×224×3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>
