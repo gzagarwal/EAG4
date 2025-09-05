@@ -78,7 +78,7 @@ async function uploadImage() {
 
 async function addLayer() {
   const type = document.getElementById('layerType').value;
-  const kernel = parseInt(document.getElementById('kernelSize').value, 10);
+  const kernel = parseInt(document.getElementById('kernel').value, 10);
   const stride = parseInt(document.getElementById('stride').value, 10);
   const padding = parseInt(document.getElementById('padding').value, 10);
   const dilation = parseInt(document.getElementById('dilation').value, 10);
